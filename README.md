@@ -2,13 +2,16 @@
 
 RoleFu is a modern, explicit role management gem for Ruby on Rails. It is designed as a cleaner, more performant alternative to legacy role gems, providing full control over role assignments and granular permissions.
 
+[![Gem Version](https://badge.fury.io/rb/role_fu.svg)](https://badge.fury.io/rb/role_fu)
+[![Build Status](https://github.com/alec-c4/role_fu/actions/workflows/main.yml/badge.svg)](https://github.com/alec-c4/role_fu/actions)
+
 ## Why RoleFu?
 
 - **Explicit Models**: Uses an explicit `RoleAssignment` join model instead of hidden tables, making it easy to add metadata or audit trails.
 - **N+1 Prevention**: Built-in support for `has_cached_role?` and optimized scopes.
 - **Strict by Default**: Resource-specific checks are strict, ensuring global roles don't accidentally leak permissions unless configured otherwise.
 - **Advanced Features**: Supports temporal (expiring) roles, metadata, audit logging, and granular abilities.
-- **Modern Infrastructure**: Fully compatible with Rails 7.0 through 8.1, includes Lefthook and Appraisal support.
+- **Modern Infrastructure**: Fully compatible with Rails 7.2 through 8.1, includes Lefthook and Appraisal support.
 
 ## Installation
 
@@ -27,17 +30,20 @@ bundle install
 ### Setup
 
 1. **Install Configuration:**
+
 ```bash
 rails generate role_fu:install
 ```
 
 2. **Generate Models:**
-Default names are `Role` and `RoleAssignment`, linked to the `User` model.
+   Default names are `Role` and `RoleAssignment`, linked to the `User` model.
+
 ```bash
 rails generate role_fu Role User
 ```
 
 3. **Run Migrations:**
+
 ```bash
 rails db:migrate
 ```
@@ -95,6 +101,7 @@ User.with_all_roles(:admin, :manager)
 ### Advanced Features
 
 #### 1. Temporal Roles (Expiration)
+
 Roles can be assigned with an expiration time. They are automatically filtered out from queries once expired.
 
 ```ruby
@@ -108,6 +115,7 @@ user.grant(:manager, org, expires_at: 1.week.from_now)
 ```
 
 #### 2. Metadata
+
 Attach arbitrary metadata to a role assignment.
 
 ```ruby
@@ -115,9 +123,11 @@ user.grant(:manager, org, meta: { assigned_by: current_user.id, reason: "Project
 ```
 
 #### 3. Audit Log
+
 Track every grant, revoke, and update (e.g., expiration extensions).
 
 **Setup:**
+
 ```bash
 rails generate role_fu:audit
 rails db:migrate
@@ -125,6 +135,7 @@ rails db:migrate
 
 **Usage:**
 Wrap changes in `with_actor` to capture the responsible user:
+
 ```ruby
 RoleFu.with_actor(current_user) do
   user.grant(:manager, org)
@@ -136,15 +147,18 @@ RoleAssignmentAudit.where(user: user).last
 ```
 
 #### 4. Role Abilities (Permissions)
+
 Attach granular permissions to roles.
 
 **Setup:**
+
 ```bash
 rails generate role_fu:abilities
 rails db:migrate
 ```
 
 **Usage:**
+
 ```ruby
 # Setup permissions
 manager_role = Role.find_by(name: "manager")
@@ -159,6 +173,7 @@ user.role_fu_can?("posts.edit") # => true
 ### Adapters (Pundit & CanCanCan)
 
 #### CanCanCan
+
 ```ruby
 class Ability
   include CanCan::Ability
@@ -171,12 +186,14 @@ end
 ```
 
 #### Pundit
+
 ```ruby
 class ApplicationPolicy
   include RoleFu::Adapters::Pundit
 end
 ```
-*`PostPolicy#update?` will automatically check `user.role_fu_can?('posts.update')`.*
+
+_`PostPolicy#update?` will automatically check `user.role_fu_can?('posts.update')`._
 
 ---
 
@@ -217,7 +234,7 @@ Customize your model names in `config/initializers/role_fu.rb`:
 RoleFu.configure do |config|
   config.user_class_name = "Account"
   config.role_class_name = "Group"
-  
+
   # Enable Rolify-style permissive checks (Global roles override resource checks)
   config.global_roles_override = true
 end
@@ -244,11 +261,13 @@ User.not_in_group(:admin)  # Alias for without_group/without_role
 
 1. **Code Changes**: Replace `rolify` with `include RoleFu::Roleable` and `resourcify` with `include RoleFu::Resourceable`.
 2. **Data Migration**:
+
 ```sql
 INSERT INTO role_assignments (user_id, role_id, created_at, updated_at)
 SELECT user_id, role_id, NOW(), NOW()
 FROM users_roles;
 ```
+
 3. **Behavior**: Set `config.global_roles_override = true` if you rely on global roles satisfying resource checks.
 
 ## License
