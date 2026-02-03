@@ -2,12 +2,13 @@
 
 module RoleFu
   class Configuration
-    attr_accessor :user_class_name, :role_class_name, :role_assignment_class_name
+    attr_accessor :user_class_name, :role_class_name, :role_assignment_class_name, :global_roles_override
 
     def initialize
       @user_class_name = "User"
       @role_class_name = "Role"
       @role_assignment_class_name = "RoleAssignment"
+      @global_roles_override = false
     end
   end
 

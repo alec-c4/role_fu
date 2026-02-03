@@ -12,6 +12,8 @@ class RoleFuCreate<%= table_name.camelize %> < ActiveRecord::Migration<%= migrat
     create_table :<%= table_name.singularize %>_assignments do |t|
       t.references :<%= user_cname.underscore %>, index: true
       t.references :<%= table_name.singularize %>, index: true
+      t.datetime :expires_at, index: true
+      t.jsonb :meta, default: {}
 
       t.timestamps
     end

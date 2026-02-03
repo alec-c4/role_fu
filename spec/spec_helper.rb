@@ -40,6 +40,26 @@ RSpec.configure do |config|
       create_table :role_assignments, force: true do |t|
         t.integer :user_id
         t.integer :role_id
+        t.datetime :expires_at
+        t.string :meta # using string for jsonb emulation in sqlite
+        t.timestamps
+      end
+
+      create_table :role_assignment_audits, force: true do |t|
+        t.integer :user_id
+        t.integer :role_id
+        t.integer :role_assignment_id
+        t.string :operation
+        t.string :whodunnit
+        t.string :meta_snapshot
+        t.datetime :expires_at_snapshot
+        t.timestamps
+      end
+
+      create_table :permissions, force: true do |t|
+        t.integer :role_id
+        t.string :action
+        t.string :conditions
         t.timestamps
       end
 
@@ -52,6 +72,7 @@ end
 
 class User < ActiveRecord::Base
   include RoleFu::Roleable
+  include RoleFu::Ability
 
   role_fu_options before_add: :log_before_add, after_add: :log_after_add
 
@@ -68,10 +89,19 @@ end
 
 class Role < ActiveRecord::Base
   include RoleFu::Role
+
+  has_many :permissions, dependent: :destroy
+end
+
+class Permission < ActiveRecord::Base
+  include RoleFu::Permission
 end
 
 class RoleAssignment < ActiveRecord::Base
   include RoleFu::RoleAssignment
+end
+
+class RoleAssignmentAudit < ActiveRecord::Base
 end
 
 class Organization < ActiveRecord::Base

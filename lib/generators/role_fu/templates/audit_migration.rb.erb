@@ -1,0 +1,23 @@
+# frozen_string_literal: true
+
+class RoleFuCreateAudits < ActiveRecord::Migration<%= migration_version %>
+  def change
+    create_table :role_assignment_audits do |t|
+      t.references :user, index: true
+      t.references :role, index: true
+      t.references :role_assignment, index: true
+      t.string :operation, null: false # INSERT, UPDATE, DELETE
+      t.string :whodunnit
+      t.jsonb :meta_snapshot
+      t.datetime :expires_at_snapshot
+
+      t.timestamps
+    end
+    
+    # If using PostgreSQL, you can add a trigger here to automatically populate this table.
+    # Example (Conceptual):
+    # execute <<-SQL
+    #   CREATE TRIGGER ...
+    # SQL
+  end
+end

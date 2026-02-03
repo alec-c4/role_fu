@@ -1,0 +1,7 @@
+# frozen_string_literal: true
+
+class RoleAssignmentAudit < ApplicationRecord
+  belongs_to :user, optional: true
+  belongs_to :role, optional: true
+  belongs_to :role_assignment, optional: true
+end

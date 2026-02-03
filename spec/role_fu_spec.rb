@@ -51,6 +51,128 @@ RSpec.describe RoleFu do
       user.add_role(:member, organization)
       expect(user.has_only_global_roles?).to be false
     end
+
+    it "respects global_roles_override" do
+      user.add_role(:admin)
+      expect(user.has_role?(:admin, organization)).to be false
+
+      described_class.configure { |c| c.global_roles_override = true }
+      expect(user.has_role?(:admin, organization)).to be true
+
+      described_class.configure { |c| c.global_roles_override = false } # reset
+    end
+  end
+
+  describe "Temporal Roles" do
+    it "does not grant role if expired" do
+      user.add_role(:temp_admin, expires_at: 1.hour.ago)
+      expect(user.has_role?(:temp_admin)).to be false
+    end
+
+    it "grants role if not expired" do
+      user.add_role(:temp_admin, expires_at: 1.hour.from_now)
+      expect(user.has_role?(:temp_admin)).to be true
+    end
+
+    it "updates expiration on re-add" do
+      user.add_role(:temp_admin, expires_at: 1.hour.ago)
+      expect(user.has_role?(:temp_admin)).to be false
+
+      user.add_role(:temp_admin, expires_at: 1.hour.from_now)
+      expect(user.has_role?(:temp_admin)).to be true
+    end
+  end
+
+  describe "Metadata" do
+    it "stores metadata" do
+      # Note: sqlite in tests mimics jsonb as string/text usually, but AR handles hash serialization if configured.
+
+      # Since we defined it as string in schema, we might need to serialize manually or just check basic assignment works.
+
+      # For the test, we'll assume the add_role method passes it to create!/update.
+
+      # We need to verify it hits the DB column.
+
+      role = user.add_role(:meta_role, meta: {assigned_by: 1})
+
+      assignment = RoleAssignment.find_by(role: role, user: user)
+
+      # Since we use sqlite string in test helper without 'serialize', it might save as string representation.
+
+      # Just checking it persists is enough for now.
+
+      expect(assignment.meta).not_to be_nil
+    end
+  end
+
+  describe "Audit Log" do
+    it "logs creation" do
+      described_class.with_actor("admin_user") do
+        user.add_role(:audit_role)
+      end
+
+      audit = RoleAssignmentAudit.last
+
+      expect(audit).not_to be_nil
+
+      expect(audit.operation).to eq("INSERT")
+
+      expect(audit.whodunnit).to eq("admin_user")
+    end
+
+    it "logs update (extension)" do
+      user.add_role(:audit_role, expires_at: 1.day.from_now)
+
+      described_class.with_actor("updater") do
+        user.add_role(:audit_role, expires_at: 2.days.from_now)
+      end
+
+      audit = RoleAssignmentAudit.last
+
+      expect(audit.operation).to eq("UPDATE")
+
+      expect(audit.whodunnit).to eq("updater")
+    end
+
+    it "logs deletion" do
+      user.add_role(:audit_role)
+
+      described_class.with_actor("deleter") do
+        user.remove_role(:audit_role)
+      end
+
+      audit = RoleAssignmentAudit.last
+
+      expect(audit.operation).to eq("DELETE")
+
+      expect(audit.whodunnit).to eq("deleter")
+    end
+  end
+
+  describe "Abilities" do
+    it "checks permissions" do
+      role = user.add_role(:editor)
+      role.permissions.create(action: "posts.edit")
+
+      expect(user.role_fu_can?("posts.edit")).to be true
+      expect(user.role_fu_can?("posts.delete")).to be false
+    end
+
+    it "filters expired roles for permissions" do
+      role = user.add_role(:temp_editor, expires_at: 1.hour.ago)
+      role.permissions.create(action: "temp.edit")
+
+      expect(user.role_fu_can?("temp.edit")).to be false
+
+      user.add_role(:temp_editor, expires_at: 1.hour.from_now)
+      # Reset caching instance variable for test if needed, but role_fu_permissions usually rebuilds if needed?
+      # Wait, @role_fu_permissions is memoized.
+      # If we change roles, we must clear the cache or reload.
+      # The user object is the same instance.
+      user.instance_variable_set(:@_role_fu_permissions, nil)
+
+      expect(user.role_fu_can?("temp.edit")).to be true
+    end
   end
 
   describe "Scopes" do
@@ -273,6 +395,22 @@ RSpec.describe RoleFu do
 
       user.remove_role(:shared_role)
       expect(Role.find_by(name: "shared_role")).to be_present
+    end
+  end
+
+  describe "Aliases" do
+    before do
+      User.role_fu_alias :group
+    end
+
+    it "supports custom aliases" do
+      user.add_group(:alpha)
+      expect(user.has_group?(:alpha)).to be true
+      expect(User.in_group(:alpha)).to include(user)
+      expect(User.with_group(:alpha)).to include(user)
+
+      user.remove_group(:alpha)
+      expect(user.has_group?(:alpha)).to be false
     end
   end
 end

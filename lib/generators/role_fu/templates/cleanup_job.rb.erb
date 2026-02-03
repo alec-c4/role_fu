@@ -1,0 +1,12 @@
+# frozen_string_literal: true
+
+module RoleFu
+  class CleanupJob < ApplicationJob
+    queue_as :default
+
+    def perform
+      result = RoleFu::Cleanup.call
+      Rails.logger.info("RoleFu::CleanupJob: Deleted #{result[:deleted]} expired assignments.")
+    end
+  end
+end
