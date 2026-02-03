@@ -1,38 +1,116 @@
 # RoleFu
 
-TODO: Delete this and the text below, and describe your gem
+RoleFu is a modern, explicit role management gem for Ruby on Rails. It is designed as a cleaner, more performant alternative to `rolify`.
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/role_fu`. To experiment with that code, run `bin/console` for an interactive prompt.
+## Why RoleFu?
+
+- **Explicit Models**: Unlike Rolify which often uses hidden `has_and_belongs_to_many` tables, RoleFu uses an explicit `RoleAssignment` join model. This makes it easier to extend with metadata (e.g., `created_by`, `expires_at`).
+- **N+1 Prevention**: Built-in support for `has_cached_role?` to work with preloaded associations.
+- **Strict by Default**: Focused on resource-specific roles with clear `has_role?` semantics.
+- **Orphaned Role Cleanup**: Automatically deletes roles when the last user assignment is removed.
 
 ## Installation
 
-TODO: Replace `UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG` with your gem name right after releasing it to RubyGems.org. Please do not do it earlier due to security reasons. Alternatively, replace this section with instructions to install your gem from git if you don't plan to release to RubyGems.org.
+Add this line to your application's Gemfile:
 
-Install the gem and add to the application's Gemfile by executing:
-
-```bash
-bundle add UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+```ruby
+gem 'role_fu'
 ```
 
-If bundler is not being used to manage dependencies, install the gem by executing:
+And then execute:
 
 ```bash
-gem install UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+bundle install
+```
+
+### Setup
+
+1. Run the install generator to create the configuration:
+```bash
+rails generate role_fu:install
+```
+
+2. Generate the Role models (default names are `Role` and `RoleAssignment`):
+```bash
+rails generate role_fu Role User
+```
+
+3. Run migrations:
+```bash
+rails db:migrate
 ```
 
 ## Usage
 
-TODO: Write usage instructions here
+### Roleable (User Model)
 
-## Development
+Include `RoleFu::Roleable` in your User model (done automatically by the generator).
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+```ruby
+class User < ApplicationRecord
+  include RoleFu::Roleable
+  
+  # Optional callbacks
+  role_fu_options after_add: :notify_user
+  
+  def notify_user(role)
+    # ...
+  end
+end
+```
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+#### Basic Operations
 
-## Contributing
+```ruby
+user = User.find(1)
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/role_fu.
+# Global roles
+user.add_role(:admin)
+user.has_role?(:admin) # => true
+user.remove_role(:admin)
+
+# Resource-specific roles
+org = Organization.first
+user.add_role(:manager, org)
+user.has_role?(:manager, org) # => true
+user.has_role?(:manager)      # => false (strict check)
+user.has_role?(:manager, :any) # => true
+```
+
+#### Performance (N+1 Prevention)
+
+Use `has_cached_role?` when roles are preloaded.
+
+```ruby
+users = User.includes(:roles).all
+users.each do |user|
+  user.has_cached_role?(:admin) # No extra queries!
+end
+```
+
+### Resourceable (Models with roles)
+
+Include `RoleFu::Resourceable` in any model that should have roles scoped to it.
+
+```ruby
+class Organization < ApplicationRecord
+  include RoleFu::Resourceable
+end
+
+org = Organization.first
+org.users_with_role(:manager)
+org.count_users_with_role(:admin)
+org.available_roles # ["manager", "admin"]
+```
+
+## Comparison with Rolify
+
+| Feature | Rolify | RoleFu |
+|---------|--------|--------|
+| Join Model | Implicit (HABTM) | Explicit (RoleAssignment) |
+| Performance | Frequent N+1 | Cached role support |
+| Orphaned Roles | Configurable cleanup | Automatic cleanup |
+| Modern Rails | Older codebase | Optimized for Rails 7+ |
 
 ## License
 
