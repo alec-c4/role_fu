@@ -7,11 +7,11 @@ module RoleFu
 
     included do
       has_many :role_assignments,
-               class_name: RoleFu.configuration.role_assignment_class_name,
-               dependent: :destroy
+        class_name: RoleFu.configuration.role_assignment_class_name,
+        dependent: :destroy
       has_many :roles,
-               through: :role_assignments,
-               class_name: RoleFu.configuration.role_class_name
+        through: :role_assignments,
+        class_name: RoleFu.configuration.role_class_name
 
       class_attribute :role_fu_callbacks, default: {}
     end
@@ -27,18 +27,18 @@ module RoleFu
       # @return [ActiveRecord::Relation] Users with the role
       def with_role(role_name, resource = nil)
         role_table = RoleFu.role_class.table_name
-        assignment_table = RoleFu.role_assignment_class.table_name
-        
-        query = joins(:roles).where(role_table => { name: role_name.to_s })
+        RoleFu.role_assignment_class.table_name
+
+        query = joins(:roles).where(role_table => {name: role_name.to_s})
 
         if resource.nil?
-          query.where(role_table => { resource_type: nil, resource_id: nil })
+          query.where(role_table => {resource_type: nil, resource_id: nil})
         elsif resource == :any
           query
         elsif resource.is_a?(Class)
-          query.where(role_table => { resource_type: resource.to_s, resource_id: nil })
+          query.where(role_table => {resource_type: resource.to_s, resource_id: nil})
         else
-          query.where(role_table => { resource_type: resource.class.name, resource_id: resource.id })
+          query.where(role_table => {resource_type: resource.class.name, resource_id: resource.id})
         end.distinct
       end
 
@@ -56,10 +56,10 @@ module RoleFu
       def with_any_role(*args)
         ids = []
         args.each do |arg|
-          if arg.is_a?(Hash)
-            ids += with_role(arg[:name], arg[:resource]).pluck(:id)
+          ids += if arg.is_a?(Hash)
+            with_role(arg[:name], arg[:resource]).pluck(:id)
           else
-            ids += with_role(arg).pluck(:id)
+            with_role(arg).pluck(:id)
           end
         end
         where(id: ids.uniq)
@@ -72,10 +72,10 @@ module RoleFu
         ids = nil
         args.each do |arg|
           current_ids = if arg.is_a?(Hash)
-                          with_role(arg[:name], arg[:resource]).pluck(:id)
-                        else
-                          with_role(arg).pluck(:id)
-                        end
+            with_role(arg[:name], arg[:resource]).pluck(:id)
+          else
+            with_role(arg).pluck(:id)
+          end
           ids = ids.nil? ? current_ids : ids & current_ids
           return none if ids.empty?
         end
@@ -89,13 +89,13 @@ module RoleFu
     # @return [Role] The role that was added
     def add_role(role_name, resource = nil)
       role = find_or_create_role(role_name, resource)
-      
+
       return role if roles.include?(role)
 
       run_role_fu_callback(:before_add, role)
       roles << role
       run_role_fu_callback(:after_add, role)
-      
+
       role
     end
     alias_method :grant, :add_role
@@ -159,7 +159,7 @@ module RoleFu
       role_name = role_name.to_s
       roles.to_a.any? do |role|
         next false unless role.name == role_name
-        
+
         if resource == :any
           true
         elsif resource.is_a?(Class)
@@ -221,8 +221,8 @@ module RoleFu
     # @return [ActiveRecord::Relation] Relation of resources
     def resources(resource_class)
       resource_class.joins(:roles)
-                    .merge(roles.where(resource_type: resource_class.name))
-                    .distinct
+        .merge(roles.where(resource_type: resource_class.name))
+        .distinct
     end
 
     private
@@ -279,7 +279,7 @@ module RoleFu
     def run_role_fu_callback(callback_name, role)
       method_name = role_fu_callbacks[callback_name]
       return unless method_name
-      
+
       if method_name.is_a?(Proc)
         instance_exec(role, &method_name)
       elsif respond_to?(method_name, true)

@@ -32,9 +32,11 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency "activerecord", ">= 7.0"
-  
-  spec.add_development_dependency "sqlite3", "~> 2.0"
+
+  spec.add_development_dependency "appraisal"
+  spec.add_development_dependency "lefthook"
   spec.add_development_dependency "rake", "~> 13.0"
   spec.add_development_dependency "rspec", "~> 3.0"
-  spec.add_development_dependency "rubocop"
+  spec.add_development_dependency "simplecov", "~> 0.21"
+  spec.add_development_dependency "sqlite3", "~> 2.0"
 end

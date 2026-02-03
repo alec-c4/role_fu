@@ -9,3 +9,10 @@
 
 # rspec failure tracking
 .rspec_status
+
+# Gem build artifacts
+*.gem
+
+# Appraisal lockfiles
+/gemfiles/*.lock
+!/gemfiles/*.lock

@@ -9,8 +9,8 @@ module RoleFu
       belongs_to :user, class_name: RoleFu.configuration.user_class_name
       belongs_to :role, class_name: RoleFu.configuration.role_class_name
 
-      scope :global_roles, -> { joins(:role).where(RoleFu.role_class.table_name => { resource_type: nil, resource_id: nil }) }
-      scope :resource_specific, -> { joins(:role).where.not(RoleFu.role_class.table_name => { resource_type: nil }) }
+      scope :global_roles, -> { joins(:role).where(RoleFu.role_class.table_name => {resource_type: nil, resource_id: nil}) }
+      scope :resource_specific, -> { joins(:role).where.not(RoleFu.role_class.table_name => {resource_type: nil}) }
 
       after_destroy :cleanup_orphaned_role
     end

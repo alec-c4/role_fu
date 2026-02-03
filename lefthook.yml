@@ -1,0 +1,11 @@
+pre-commit:
+  parallel: true
+  commands:
+    appraisal:
+      glob: "{Gemfile,role_fu.gemspec,lib/role_fu/version.rb}"
+      run: bundle exec appraisal install && git add gemfiles/*.lock
+    rubocop:
+      glob: "*.rb"
+      run: bundle exec rubocop --force-exclusion {staged_files}
+    rspec:
+      run: bundle exec rspec

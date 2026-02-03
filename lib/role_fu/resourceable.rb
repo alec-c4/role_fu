@@ -7,9 +7,9 @@ module RoleFu
 
     included do
       has_many :roles,
-               as: :resource,
-               dependent: :destroy,
-               class_name: RoleFu.configuration.role_class_name
+        as: :resource,
+        dependent: :destroy,
+        class_name: RoleFu.configuration.role_class_name
     end
 
     module ClassMethods
@@ -18,10 +18,10 @@ module RoleFu
       # @param user [User, nil] Filter by user
       # @return [ActiveRecord::Relation] Roles
       def find_roles(role_name = nil, user = nil)
-        role_table = RoleFu.role_class.table_name
+        RoleFu.role_class.table_name
         query = RoleFu.role_class.where(resource_type: name)
         query = query.where(name: role_name.to_s) if role_name
-        query = query.joins(:users).where(RoleFu.user_class.table_name => { id: user.id }) if user
+        query = query.joins(:users).where(RoleFu.user_class.table_name => {id: user.id}) if user
         query
       end
 
@@ -31,16 +31,16 @@ module RoleFu
       # @return [ActiveRecord::Relation] Resources
       def with_role(role_name, user = nil)
         role_table = RoleFu.role_class.table_name
-        
-        query = joins(:roles).where(role_table => { name: role_name.to_s })
-        
+
+        query = joins(:roles).where(role_table => {name: role_name.to_s})
+
         if user
-          query = query.joins(roles: :users).where(RoleFu.user_class.table_name => { id: user.id })
+          query = query.joins(roles: :users).where(RoleFu.user_class.table_name => {id: user.id})
         end
-        
+
         query.distinct
       end
-      
+
       # Find resources that do NOT have a specific role applied
       # @param role_name [String, Symbol] The role name
       # @param user [User, nil] Filter by user
@@ -62,8 +62,8 @@ module RoleFu
     def users_with_role(role_name)
       role_table = RoleFu.role_class.table_name
       user_class.joins(:roles)
-                .where(role_table => { name: role_name.to_s, resource_type: self.class.name, resource_id: id })
-                .distinct
+        .where(role_table => {name: role_name.to_s, resource_type: self.class.name, resource_id: id})
+        .distinct
     end
 
     # Get users with any role on this resource
@@ -72,8 +72,8 @@ module RoleFu
     def users_with_any_role(*role_names)
       role_table = RoleFu.role_class.table_name
       user_class.joins(:roles)
-                .where(role_table => { name: role_names.flatten.map(&:to_s), resource_type: self.class.name, resource_id: id })
-                .distinct
+        .where(role_table => {name: role_names.flatten.map(&:to_s), resource_type: self.class.name, resource_id: id})
+        .distinct
     end
 
     # Get users with all specified roles on this resource
@@ -82,12 +82,12 @@ module RoleFu
     def users_with_all_roles(*role_names)
       role_names = role_names.flatten.map(&:to_s)
       role_table = RoleFu.role_class.table_name
-      
+
       user_class.joins(:roles)
-                .where(role_table => { name: role_names, resource_type: self.class.name, resource_id: id })
-                .group("#{user_class.table_name}.#{user_class.primary_key}")
-                .having("COUNT(DISTINCT #{role_table}.name) = ?", role_names.size)
-                .distinct
+        .where(role_table => {name: role_names, resource_type: self.class.name, resource_id: id})
+        .group("#{user_class.table_name}.#{user_class.primary_key}")
+        .having("COUNT(DISTINCT #{role_table}.name) = ?", role_names.size)
+        .distinct
     end
 
     # Get all users with any role on this resource
@@ -95,8 +95,8 @@ module RoleFu
     def users_with_roles
       role_table = RoleFu.role_class.table_name
       user_class.joins(:roles)
-                .where(role_table => { resource_type: self.class.name, resource_id: id })
-                .distinct
+        .where(role_table => {resource_type: self.class.name, resource_id: id})
+        .distinct
     end
 
     # Get all role names defined for this resource

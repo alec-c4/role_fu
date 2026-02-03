@@ -1,5 +1,11 @@
 # frozen_string_literal: true
 
+require "simplecov"
+SimpleCov.start do
+  add_filter "/spec/"
+  add_group "Library", "lib"
+end
+
 require "role_fu"
 require "active_record"
 
@@ -16,7 +22,7 @@ RSpec.configure do |config|
 
   config.before(:suite) do
     ActiveRecord::Base.establish_connection(adapter: "sqlite3", database: ":memory:")
-    
+
     ActiveRecord::Schema.define do
       self.verbose = false
 
@@ -41,33 +47,33 @@ RSpec.configure do |config|
         t.string :name
       end
     end
-
-    class User < ActiveRecord::Base
-      include RoleFu::Roleable
-      
-      role_fu_options before_add: :log_before_add, after_add: :log_after_add
-      
-      attr_accessor :callback_log
-      
-      def log_before_add(role)
-        (@callback_log ||= []) << "before_add_#{role.name}"
-      end
-      
-      def log_after_add(role)
-        (@callback_log ||= []) << "after_add_#{role.name}"
-      end
-    end
-
-    class Role < ActiveRecord::Base
-      include RoleFu::Role
-    end
-
-    class RoleAssignment < ActiveRecord::Base
-      include RoleFu::RoleAssignment
-    end
-
-    class Organization < ActiveRecord::Base
-      include RoleFu::Resourceable
-    end
   end
+end
+
+class User < ActiveRecord::Base
+  include RoleFu::Roleable
+
+  role_fu_options before_add: :log_before_add, after_add: :log_after_add
+
+  attr_accessor :callback_log
+
+  def log_before_add(role)
+    (@callback_log ||= []) << "before_add_#{role.name}"
+  end
+
+  def log_after_add(role)
+    (@callback_log ||= []) << "after_add_#{role.name}"
+  end
+end
+
+class Role < ActiveRecord::Base
+  include RoleFu::Role
+end
+
+class RoleAssignment < ActiveRecord::Base
+  include RoleFu::RoleAssignment
+end
+
+class Organization < ActiveRecord::Base
+  include RoleFu::Resourceable
 end

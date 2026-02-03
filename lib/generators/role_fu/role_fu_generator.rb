@@ -12,7 +12,7 @@ module RoleFu
       def generate_models
         # Generate Role model
         template "role.rb.erb", "app/models/#{name.underscore}.rb"
-        
+
         # Generate RoleAssignment model
         assignment_name = "#{name}Assignment"
         template "role_assignment.rb.erb", "app/models/#{assignment_name.underscore}.rb"
