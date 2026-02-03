@@ -1,8 +1,19 @@
 ## [Unreleased]
 
+## [0.3.0] - 2026-02-03
+
+### BREAKING CHANGES
+
+- **Drop Rails 7.0 and 7.1 support**: Minimum required Rails version is now 7.2+
+  - Rails 7.0 and 7.1 require `sqlite3 ~> 1.4`, which conflicts with `sqlite3 ~> 2.0`
+  - Rails 7.2+ supports `sqlite3 >= 1.6.6`, ensuring compatibility with modern sqlite3 versions
+  - Updated `activerecord` dependency from `>= 7.0` to `>= 7.2`
+  - Removed Rails 7.0 and 7.1 from CI test matrix
+
 ## [0.2.0] - 2026-02-03
 
 ### Added
+
 - **Temporal Roles**: Support for role expiration (`expires_at`) and automatic filtering.
 - **Audit Logging**: Built-in generator for audit trails (`RoleAssignmentAudit`) and actor tracking (`RoleFu.with_actor`).
 - **Role Abilities**: Granular permissions system with `Permission` model and `role_fu_can?` helper.
