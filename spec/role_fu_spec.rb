@@ -10,7 +10,7 @@ RSpec.describe RoleFu do
 
   describe "Global Roles" do
     it "adds a global role" do
-      user.add_role(:admin)
+      user.grant(:admin)
       expect(user.has_role?(:admin)).to be true
       expect(user.roles.count).to eq(1)
       expect(user.roles.first.name).to eq("admin")
@@ -18,10 +18,73 @@ RSpec.describe RoleFu do
     end
 
     it "removes a global role" do
-      user.add_role(:admin)
-      user.remove_role(:admin)
+      user.grant(:admin)
+      user.revoke(:admin)
       expect(user.has_role?(:admin)).to be false
       expect(user.roles.count).to eq(0)
+    end
+    
+    it "checks strict roles" do
+      user.grant(:admin)
+      expect(user.has_strict_role?(:admin)).to be true
+      expect(user.has_strict_role?(:admin, organization)).to be false
+    end
+    
+    it "checks only_has_role?" do
+      user.grant(:admin)
+      expect(user.only_has_role?(:admin)).to be true
+      
+      user.grant(:manager)
+      expect(user.only_has_role?(:admin)).to be false
+    end
+  end
+
+  describe "Scopes" do
+    let!(:user2) { User.create(name: "User 2") }
+    
+    before do
+      user.add_role(:admin)
+      user.add_role(:manager, organization)
+      user2.add_role(:editor)
+    end
+    
+    describe "User scopes" do
+      it "finds users with global role" do
+        users = User.with_role(:admin)
+        expect(users).to include(user)
+        expect(users).not_to include(user2)
+      end
+      
+      it "finds users with resource role" do
+        users = User.with_role(:manager, organization)
+        expect(users).to include(user)
+        expect(users).not_to include(user2)
+      end
+      
+      it "finds users with any role" do
+        users = User.with_any_role(:admin, :editor)
+        expect(users).to include(user, user2)
+      end
+      
+      it "finds users without role" do
+        users = User.without_role(:admin)
+        expect(users).to include(user2)
+        expect(users).not_to include(user)
+      end
+    end
+    
+    describe "Resource scopes" do
+      it "finds resources with role applied to user" do
+        orgs = Organization.with_role(:manager, user)
+        expect(orgs).to include(organization)
+      end
+      
+      it "finds resources without role applied to user" do
+        org2 = Organization.create(name: "Other Org")
+        orgs = Organization.without_role(:manager, user)
+        expect(orgs).to include(org2)
+        expect(orgs).not_to include(organization)
+      end
     end
   end
 

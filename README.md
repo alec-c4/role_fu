@@ -66,8 +66,10 @@ user = User.find(1)
 
 # Global roles
 user.add_role(:admin)
+user.grant(:admin) # Alias
 user.has_role?(:admin) # => true
 user.remove_role(:admin)
+user.revoke(:admin) # Alias
 
 # Resource-specific roles
 org = Organization.first
@@ -75,6 +77,18 @@ user.add_role(:manager, org)
 user.has_role?(:manager, org) # => true
 user.has_role?(:manager)      # => false (strict check)
 user.has_role?(:manager, :any) # => true
+user.only_has_role?(:manager, org) # => true if this is their only role
+
+# Scopes (Finders)
+User.with_role(:admin)
+User.with_role(:manager, org)
+User.without_role(:admin)
+User.with_any_role(:admin, :editor)
+User.with_all_roles(:admin, :manager)
+
+# Resource Scopes
+Organization.with_role(:manager, user)
+Organization.without_role(:manager, user)
 ```
 
 #### Performance (N+1 Prevention)
@@ -108,9 +122,22 @@ org.available_roles # ["manager", "admin"]
 | Feature | Rolify | RoleFu |
 |---------|--------|--------|
 | Join Model | Implicit (HABTM) | Explicit (RoleAssignment) |
-| Performance | Frequent N+1 | Cached role support |
+| Performance | Frequent N+1 | Cached role support + Optimized Scopes |
 | Orphaned Roles | Configurable cleanup | Automatic cleanup |
+| Scopes | `User.with_role` | `User.with_role`, `without_role`, `with_any`, `with_all` |
 | Modern Rails | Older codebase | Optimized for Rails 7+ |
+
+## Configuration
+
+If your models are named differently (e.g., `Account` instead of `User`, or `Group` instead of `Role`), you can configure them in `config/initializers/role_fu.rb`:
+
+```ruby
+RoleFu.configure do |config|
+  config.user_class_name = "Account"
+  config.role_class_name = "Group"
+  config.role_assignment_class_name = "GroupAssignment" # Optional
+end
+```
 
 ## License
 

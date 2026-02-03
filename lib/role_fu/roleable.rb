@@ -20,6 +20,67 @@ module RoleFu
       def role_fu_options(options = {})
         self.role_fu_callbacks = options.slice(:before_add, :after_add, :before_remove, :after_remove)
       end
+
+      # Find users with a specific role
+      # @param role_name [String, Symbol] The name of the role
+      # @param resource [ActiveRecord::Base, Class, nil, :any] The resource
+      # @return [ActiveRecord::Relation] Users with the role
+      def with_role(role_name, resource = nil)
+        role_table = RoleFu.role_class.table_name
+        assignment_table = RoleFu.role_assignment_class.table_name
+        
+        query = joins(:roles).where(role_table => { name: role_name.to_s })
+
+        if resource.nil?
+          query.where(role_table => { resource_type: nil, resource_id: nil })
+        elsif resource == :any
+          query
+        elsif resource.is_a?(Class)
+          query.where(role_table => { resource_type: resource.to_s, resource_id: nil })
+        else
+          query.where(role_table => { resource_type: resource.class.name, resource_id: resource.id })
+        end.distinct
+      end
+
+      # Find users without a specific role
+      # @param role_name [String, Symbol] The name of the role
+      # @param resource [ActiveRecord::Base, Class, nil, :any] The resource
+      # @return [ActiveRecord::Relation] Users without the role
+      def without_role(role_name, resource = nil)
+        where.not(id: with_role(role_name, resource).select(:id))
+      end
+
+      # Find users with any of the specified roles
+      # @param args [Array<String, Symbol, Hash>] Roles to check
+      # @return [ActiveRecord::Relation] Users with any of the roles
+      def with_any_role(*args)
+        ids = []
+        args.each do |arg|
+          if arg.is_a?(Hash)
+            ids += with_role(arg[:name], arg[:resource]).pluck(:id)
+          else
+            ids += with_role(arg).pluck(:id)
+          end
+        end
+        where(id: ids.uniq)
+      end
+
+      # Find users with all of the specified roles
+      # @param args [Array<String, Symbol, Hash>] Roles to check
+      # @return [ActiveRecord::Relation] Users with all of the roles
+      def with_all_roles(*args)
+        ids = nil
+        args.each do |arg|
+          current_ids = if arg.is_a?(Hash)
+                          with_role(arg[:name], arg[:resource]).pluck(:id)
+                        else
+                          with_role(arg).pluck(:id)
+                        end
+          ids = ids.nil? ? current_ids : ids & current_ids
+          return none if ids.empty?
+        end
+        where(id: ids)
+      end
     end
 
     # Add a role to the user
@@ -37,6 +98,7 @@ module RoleFu
       
       role
     end
+    alias_method :grant, :add_role
 
     # Remove a role from the user
     # @param role_name [String, Symbol] The name of the role
@@ -57,6 +119,7 @@ module RoleFu
 
       removed_roles
     end
+    alias_method :revoke, :remove_role
 
     # Check if user has a specific role
     # @param role_name [String, Symbol] The name of the role
@@ -70,6 +133,25 @@ module RoleFu
       else
         find_roles(role_name, resource).any?
       end
+    end
+
+    # Check if user has a specific role strictly (resource match must be exact, no globals overriding)
+    # Note: In RoleFu, has_role? is already strict about resource matching unless :any is passed,
+    # but this method explicitly bypasses any future global-fallback logic if we were to add it.
+    # Included for API compatibility.
+    # @param role_name [String, Symbol] The name of the role
+    # @param resource [ActiveRecord::Base, Class, nil] The resource
+    # @return [Boolean] true if user has the role strictly
+    def has_strict_role?(role_name, resource = nil)
+      has_role?(role_name, resource)
+    end
+
+    # Check if user only has this one role
+    # @param role_name [String, Symbol] The name of the role
+    # @param resource [ActiveRecord::Base, Class, nil] The resource
+    # @return [Boolean] true if user has this role and no others
+    def only_has_role?(role_name, resource = nil)
+      has_role?(role_name, resource) && roles.count == 1
     end
 
     # Check for role using preloaded association to avoid N+1

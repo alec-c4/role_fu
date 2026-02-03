@@ -12,6 +12,50 @@ module RoleFu
                class_name: RoleFu.configuration.role_class_name
     end
 
+    module ClassMethods
+      # Find roles defined on any instance of this resource class
+      # @param role_name [String, Symbol, nil] Filter by role name
+      # @param user [User, nil] Filter by user
+      # @return [ActiveRecord::Relation] Roles
+      def find_roles(role_name = nil, user = nil)
+        role_table = RoleFu.role_class.table_name
+        query = RoleFu.role_class.where(resource_type: name)
+        query = query.where(name: role_name.to_s) if role_name
+        query = query.joins(:users).where(RoleFu.user_class.table_name => { id: user.id }) if user
+        query
+      end
+
+      # Find resources that have a specific role applied (to a user)
+      # @param role_name [String, Symbol] The role name
+      # @param user [User, nil] Filter by specific user having the role
+      # @return [ActiveRecord::Relation] Resources
+      def with_role(role_name, user = nil)
+        role_table = RoleFu.role_class.table_name
+        
+        query = joins(:roles).where(role_table => { name: role_name.to_s })
+        
+        if user
+          query = query.joins(roles: :users).where(RoleFu.user_class.table_name => { id: user.id })
+        end
+        
+        query.distinct
+      end
+      
+      # Find resources that do NOT have a specific role applied
+      # @param role_name [String, Symbol] The role name
+      # @param user [User, nil] Filter by user
+      # @return [ActiveRecord::Relation] Resources
+      def without_role(role_name, user = nil)
+        where.not(id: with_role(role_name, user).select(:id))
+      end
+    end
+
+    # Get roles applied to this resource instance (plus global class-level roles if any - though RoleFu focuses on instance roles)
+    # @return [ActiveRecord::Relation] Roles
+    def applied_roles
+      roles
+    end
+
     # Get users with a specific role on this resource
     # @param role_name [String, Symbol] The role name
     # @return [ActiveRecord::Relation] Relation of users

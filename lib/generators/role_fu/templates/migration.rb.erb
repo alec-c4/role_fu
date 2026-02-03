@@ -17,5 +17,6 @@ class RoleFuCreate<%= table_name.camelize %> < ActiveRecord::Migration<%= migrat
     end
     
     add_index(:<%= table_name %>, [ :name, :resource_type, :resource_id ])
+    add_index(:<%= table_name.singularize %>_assignments, [ :<%= user_cname.underscore %>_id, :<%= table_name.singularize %>_id ], name: 'index_role_fu_assignments_on_user_and_role', unique: true)
   end
 end
