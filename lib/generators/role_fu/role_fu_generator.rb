@@ -7,7 +7,21 @@ module RoleFu
     class RoleFuGenerator < ActiveRecord::Generators::Base
       source_root File.expand_path("templates", __dir__)
 
+      # Override the default 'name' argument to be optional with default "Role"
+      remove_argument :name
+      argument :name, type: :string, default: "Role", banner: "Role"
       argument :user_cname, type: :string, default: "User", banner: "User"
+
+      def self.banner
+        "bin/rails generate role_fu [Role] [User] [options]\n\n" \
+        "Generates the Role model and the assignment join model, then links them to the User model.\n" \
+        "  Usage:\n" \
+        "    rails g role_fu                # Generates 'Role' and links to 'User' (default)\n" \
+        "    rails g role_fu Group          # Generates 'Group' and links to 'User'\n" \
+        "    rails g role_fu Group Account  # Generates 'Group' and links to 'Account'"
+      end
+
+      desc ""
 
       def generate_models
         # Generate Role model
@@ -29,7 +43,7 @@ module RoleFu
             "  include RoleFu::Roleable\n"
           end
         else
-          print_notes "User model #{user_cname} not found at #{user_path}. Please add 'include RoleFu::Roleable' manually."
+          say "User model #{user_cname} not found at #{user_path}. Please add 'include RoleFu::Roleable' manually."
         end
       end
 

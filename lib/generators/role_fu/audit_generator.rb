@@ -7,7 +7,17 @@ module RoleFu
     class AuditGenerator < ActiveRecord::Generators::Base
       source_root File.expand_path("templates", __dir__)
 
-      def create_migration
+      argument :name, type: :string, default: "audit"
+
+      def self.banner
+        "bin/rails generate role_fu:audit [NAME] [options]\n\n" \
+        "Generates the audit model and migration.\n" \
+        "  NAME is the name of the audit model (default: 'audit')."
+      end
+
+      desc "" # Empty desc to avoid duplication at the bottom
+
+      def create_audit_migration
         migration_template "audit_migration.rb.erb", "db/migrate/role_fu_create_audits.rb", migration_version: migration_version
       end
 

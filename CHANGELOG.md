@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+## [0.3.1] - 2026-02-06
+
+### Improved
+
+- **Generator Flexibility**: `role_fu` generator now supports 0, 1, or 2 arguments for easier setup (e.g., `rails g role_fu Group Account`).
+- **Documentation**: Enhanced CLI help output for all generators, placing usage examples and descriptions prominently above options.
+- **Audit & Ability Generators**: Explicitly documented the `NAME` argument in help banners.
+
 ## [0.3.0] - 2026-02-03
 
 ### BREAKING CHANGES

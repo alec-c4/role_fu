@@ -7,11 +7,21 @@ module RoleFu
     class AbilitiesGenerator < ActiveRecord::Generators::Base
       source_root File.expand_path("templates", __dir__)
 
+      argument :name, type: :string, default: "abilities"
+
+      def self.banner
+        "bin/rails generate role_fu:abilities [NAME] [options]\n\n" \
+        "Generates the permission model and migration.\n" \
+        "  NAME is the name of the permission model (default: 'abilities')."
+      end
+
+      desc ""
+
       def generate_permission_model
         template "permission.rb.erb", "app/models/permission.rb"
       end
 
-      def create_migration
+      def create_abilities_migration
         migration_template "abilities_migration.rb.erb", "db/migrate/role_fu_create_permissions.rb", migration_version: migration_version
       end
 

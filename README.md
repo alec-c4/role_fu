@@ -36,11 +36,24 @@ rails generate role_fu:install
 ```
 
 2. **Generate Models:**
-   Default names are `Role` and `RoleAssignment`, linked to the `User` model.
 
-```bash
-rails generate role_fu Role User
-```
+   You can generate the role models with flexible arguments:
+
+   *   **Default (Role & User):**
+       ```bash
+       rails generate role_fu
+       # Generates 'Role' and 'RoleAssignment', linked to 'User'
+       ```
+   *   **Custom Role Name:**
+       ```bash
+       rails generate role_fu Group
+       # Generates 'Group' and 'GroupAssignment', linked to 'User'
+       ```
+   *   **Custom Role & User Names:**
+       ```bash
+       rails generate role_fu Group Account
+       # Generates 'Group' and 'GroupAssignment', linked to 'Account'
+       ```
 
 3. **Run Migrations:**
 
@@ -130,6 +143,8 @@ Track every grant, revoke, and update (e.g., expiration extensions).
 
 ```bash
 rails generate role_fu:audit
+# OR with a custom name:
+# rails generate role_fu:audit MyAudit
 rails db:migrate
 ```
 
@@ -154,6 +169,8 @@ Attach granular permissions to roles.
 
 ```bash
 rails generate role_fu:abilities
+# OR with a custom name:
+# rails generate role_fu:abilities MyPermission
 rails db:migrate
 ```
 
