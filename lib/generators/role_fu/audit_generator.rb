@@ -18,7 +18,7 @@ module RoleFu
       desc "" # Empty desc to avoid duplication at the bottom
 
       def create_audit_migration
-        migration_template "audit_migration.rb.erb", "db/migrate/role_fu_create_audits.rb", migration_version: migration_version, uuid_enabled: uuid_enabled?
+        migration_template "audit_migration.rb.erb", "db/migrate/role_fu_create_audits.rb"
       end
 
       def create_model

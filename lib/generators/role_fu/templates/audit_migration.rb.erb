@@ -2,10 +2,10 @@
 
 class RoleFuCreateAudits < ActiveRecord::Migration<%= migration_version %>
   def change
-    create_table :role_assignment_audits<%= ", id: :uuid" if uuid_enabled %> do |t|
-      t.references :user, index: true<%= ", type: :uuid" if uuid_enabled %>
-      t.references :role, index: true<%= ", type: :uuid" if uuid_enabled %>
-      t.references :role_assignment, index: true<%= ", type: :uuid" if uuid_enabled %>
+    create_table :role_assignment_audits<%= ", id: :uuid" if uuid_enabled? %> do |t|
+      t.references :user, index: true<%= ", type: :uuid" if uuid_enabled? %>
+      t.references :role, index: true<%= ", type: :uuid" if uuid_enabled? %>
+      t.references :role_assignment, index: true<%= ", type: :uuid" if uuid_enabled? %>
       t.string :operation, null: false # INSERT, UPDATE, DELETE
       t.string :whodunnit
       t.jsonb :meta_snapshot

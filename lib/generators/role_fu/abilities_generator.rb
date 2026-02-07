@@ -22,7 +22,7 @@ module RoleFu
       end
 
       def create_abilities_migration
-        migration_template "abilities_migration.rb.erb", "db/migrate/role_fu_create_permissions.rb", migration_version: migration_version, uuid_enabled: uuid_enabled?
+        migration_template "abilities_migration.rb.erb", "db/migrate/role_fu_create_permissions.rb"
       end
 
       def inject_into_role_model

@@ -33,7 +33,7 @@ module RoleFu
       end
 
       def copy_role_fu_migration
-        migration_template "migration.rb.erb", "db/migrate/role_fu_create_#{table_name}.rb", migration_version: migration_version, uuid_enabled: uuid_enabled?
+        migration_template "migration.rb.erb", "db/migrate/role_fu_create_#{table_name}.rb"
       end
 
       def inject_role_fu_into_user_model
