@@ -2,16 +2,16 @@
 
 class RoleFuCreate<%= table_name.camelize %> < ActiveRecord::Migration<%= migration_version %>
   def change
-    create_table :<%= table_name %> do |t|
+    create_table :<%= table_name %><%= ", id: :uuid" if uuid_enabled %> do |t|
       t.string :name
-      t.references :resource, polymorphic: true, index: true
+      t.references :resource, polymorphic: true, index: true<%= ", type: :uuid" if uuid_enabled %>
 
       t.timestamps
     end
 
-    create_table :<%= table_name.singularize %>_assignments do |t|
-      t.references :<%= user_cname.underscore %>, index: true
-      t.references :<%= table_name.singularize %>, index: true
+    create_table :<%= table_name.singularize %>_assignments<%= ", id: :uuid" if uuid_enabled %> do |t|
+      t.references :<%= user_cname.underscore %>, index: true<%= ", type: :uuid" if uuid_enabled %>
+      t.references :<%= table_name.singularize %>, index: true<%= ", type: :uuid" if uuid_enabled %>
       t.datetime :expires_at, index: true
       t.jsonb :meta, default: {}
 

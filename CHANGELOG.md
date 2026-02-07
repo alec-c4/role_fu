@@ -1,5 +1,11 @@
 ## [Unreleased]
 
+## [0.3.2] - 2026-02-07
+
+### Fixed
+
+- **UUID Support**: Generators now automatically detect and use UUIDs for primary and foreign keys if enabled in the application or model configuration.
+
 ## [0.3.1] - 2026-02-06
 
 ### Improved

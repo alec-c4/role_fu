@@ -22,7 +22,7 @@ module RoleFu
       end
 
       def create_abilities_migration
-        migration_template "abilities_migration.rb.erb", "db/migrate/role_fu_create_permissions.rb", migration_version: migration_version
+        migration_template "abilities_migration.rb.erb", "db/migrate/role_fu_create_permissions.rb", migration_version: migration_version, uuid_enabled: uuid_enabled?
       end
 
       def inject_into_role_model
@@ -55,6 +55,19 @@ module RoleFu
 
       def migration_version
         "[#{Rails::VERSION::MAJOR}.#{Rails::VERSION::MINOR}]" if Rails::VERSION::MAJOR >= 5
+      end
+
+      def uuid_enabled?
+        options[:primary_key_type] == "uuid" ||
+          Rails.configuration.generators.options.dig(:active_record, :primary_key_type) == :uuid ||
+          role_has_uuid_pk?
+      end
+
+      def role_has_uuid_pk?
+        role_cname = RoleFu.configuration.role_class_name
+        klass = role_cname.safe_constantize
+        return false unless klass&.table_exists?
+        klass.columns_hash[klass.primary_key]&.type == :uuid
       end
     end
   end
