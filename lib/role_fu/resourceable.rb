@@ -9,6 +9,11 @@ module RoleFu
         as: :resource,
         dependent: :destroy,
         class_name: RoleFu.configuration.role_class_name
+
+      has_many :users,
+        through: :roles,
+        class_name: RoleFu.configuration.user_class_name,
+        source: :users
     end
 
     module ClassMethods
@@ -48,17 +53,43 @@ module RoleFu
         alias_method "users_with_any_#{singular}", :users_with_any_role
         alias_method "users_with_all_#{plural}", :users_with_all_roles
         alias_method "users_with_#{plural}", :users_with_roles
+        alias_method "users_grouped_by_#{singular}", :users_grouped_by_role
         alias_method "available_#{plural}", :available_roles
+        alias_method "applied_#{plural}", :applied_roles
         alias_method "has_#{singular}?", :has_role?
         alias_method "count_users_with_#{singular}", :count_users_with_role
         alias_method "user_has_#{singular}?", :user_has_role?
         alias_method "add_#{singular}_to_user", :add_role_to_user
         alias_method "remove_#{singular}_from_user", :remove_role_from_user
+        alias_method "destroy_#{singular}", :destroy_role
       end
     end
 
     def applied_roles
       roles
+    end
+
+    def destroy_role(role_name)
+      roles.where(name: role_name.to_s).destroy_all
+    end
+
+    def users_grouped_by_role
+      RoleFu.role_class.table_name
+
+      # Efficiently load roles and their associated users
+      # 1. Get all roles for this resource
+      # 2. Preload users for these roles
+
+      role_scope = roles.includes(:users)
+
+      results = {}
+      role_scope.each do |role|
+        results[role.name] ||= []
+        results[role.name].concat(role.users)
+      end
+
+      # Deduplicate users if a user has the same role multiple times (unlikely with distinct but safer)
+      results.transform_values(&:uniq)
     end
 
     def users_with_role(role_name)

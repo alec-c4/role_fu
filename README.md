@@ -235,8 +235,14 @@ class Organization < ApplicationRecord
 end
 
 org = Organization.first
+org.users                   # All users with ANY role (via has_many :through)
 org.users_with_role(:manager)
-org.available_roles # ["manager", "admin"]
+org.users_with_roles        # All users with ANY role on this org
+org.available_roles         # ["manager", "admin"]
+org.users_grouped_by_role   # { "manager" => [user1], "admin" => [user2] }
+
+# Cleanup
+org.destroy_role(:manager)  # Removes the "manager" role and all its assignments from this org
 
 # Scopes
 Organization.with_role(:manager, user)
@@ -254,7 +260,42 @@ RoleFu.configure do |config|
 
   # Enable Rolify-style permissive checks (Global roles override resource checks)
   config.global_roles_override = true
+
+  # Enable dynamic shortcuts (e.g. user.is_admin?)
+  # Default is nil (disabled). Recommended: "is_%{role}?"
+  config.dynamic_shortcuts_pattern = "is_%{role}?"
 end
+```
+
+## Dynamic Shortcuts
+
+RoleFu supports dynamic methods for quick role checking if you configure a pattern.
+
+**Configuration:**
+
+```ruby
+# In config/initializers/role_fu.rb
+RoleFu.configure do |config|
+  config.dynamic_shortcuts_pattern = "is_%{role}?"
+end
+```
+
+**Usage:**
+
+```ruby
+user.is_admin?              # Equivalent to user.has_role?(:admin)
+user.is_manager?(org)       # Equivalent to user.has_role?(:manager, org)
+```
+
+**Custom Pattern:**
+
+If you use groups:
+
+```ruby
+config.dynamic_shortcuts_pattern = "in_%{role}_group?"
+
+# Usage:
+user.in_admin_group?        # Equivalent to user.has_role?(:admin)
 ```
 
 ## Custom Aliases (e.g. Groups)

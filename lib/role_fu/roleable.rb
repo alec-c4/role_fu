@@ -209,7 +209,26 @@ module RoleFu
       query.distinct
     end
 
+    def method_missing(method_name, *args, &block)
+      if (role_name = parse_dynamic_role_name(method_name))
+        has_role?(role_name, *args)
+      else
+        super
+      end
+    end
+
+    def respond_to_missing?(method_name, include_private = false)
+      parse_dynamic_role_name(method_name) || super
+    end
+
     private
+
+    def parse_dynamic_role_name(method_name)
+      return nil unless (regex = RoleFu.configuration.dynamic_shortcuts_regex)
+
+      match = method_name.to_s.match(regex)
+      match ? match[:role] : nil
+    end
 
     def filter_expired(relation)
       return relation unless RoleFu.role_assignment_class.column_names.include?("expires_at")

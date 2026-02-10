@@ -1,4 +1,18 @@
-## [Unreleased]
+## [0.4.0] - 2026-02-08
+
+### Added
+
+- **Dynamic Shortcuts**:
+    - Call methods like `user.is_admin?` or `user.is_manager?(org)` directly.
+    - Configurable pattern (`config.dynamic_shortcuts_pattern`), defaults to `is_%{role}?`.
+    - Custom patterns supported (e.g. `in_%{role}_group?`).
+- **Enhanced Resourceable**:
+    - Added `has_many :users, through: :roles` association for direct user access (e.g. `org.users`).
+    - Added `users_grouped_by_role` to get a hash of users per role.
+    - Added `destroy_role(role_name)` for bulk cleanup on a resource.
+    - Added convenience methods/aliases: `users_with_roles`, `applied_roles`.
+- **Generator**:
+    - Updated install template to include new configuration options.
 
 ## [0.3.3] - 2026-02-07
 

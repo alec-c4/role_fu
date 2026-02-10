@@ -360,6 +360,29 @@ RSpec.describe RoleFu do
       expect(organization.available_roles).to include("admin")
     end
 
+    it "groups users by role" do
+      user.add_role(:editor, organization)
+      grouped = organization.users_grouped_by_role
+      expect(grouped["admin"]).to include(user)
+      expect(grouped["editor"]).to include(user)
+      expect(grouped.keys).to include("admin", "editor")
+    end
+
+    it "has many users through roles" do
+      user.add_role(:admin, organization)
+      expect(organization.users).to include(user)
+      expect(organization.users.count).to eq(1)
+    end
+
+    it "destroys specific role from resource" do
+      user.add_role(:to_be_deleted, organization)
+      expect(organization.has_role?(:to_be_deleted)).to be true
+
+      organization.destroy_role(:to_be_deleted)
+      expect(organization.has_role?(:to_be_deleted)).to be false
+      expect(user.has_role?(:to_be_deleted, organization)).to be false
+    end
+
     it "counts users with role" do
       expect(organization.count_users_with_role(:admin)).to eq(1)
     end
