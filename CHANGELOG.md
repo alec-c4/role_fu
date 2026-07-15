@@ -1,3 +1,15 @@
+## [0.5.0] - 2026-07-15
+
+### BREAKING CHANGES
+
+- **Drop Ruby 3.2 support**: Minimum required Ruby version is now 3.3+
+  - Updated `required_ruby_version` from `>= 3.2.0` to `>= 3.3.0`
+  - Removed Ruby 3.2 from CI test matrix
+
+### Changed
+
+- **Dependencies**: Updated development and test dependencies (Rails 8.1.3, concurrent-ruby 1.3.7, and security patches for activesupport, erb, and json).
+
 ## [0.4.0] - 2026-02-08
 
 ### Added
