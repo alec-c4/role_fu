@@ -1,3 +1,17 @@
+## [0.6.0] - 2026-09-22
+
+### Added
+
+- **Field-level Abilities**: `role_fu_can?(action, field:)` and `role_fu_permitted_fields(action)` allow scoping a `Permission` to a single attribute (e.g. `reports.update` + `field: "status"`). A permission granted without a `field` remains a wildcard for that action, so existing action-only permissions are unaffected. The `permissions` table gains an optional `field` column (nullable — existing installs keep working without it).
+- **CanCanCan Adapter**: field-scoped permissions now translate into CanCanCan's own native attribute restriction (`can :update, Report, :status`) instead of role_fu re-implementing attribute-level authorization.
+- **Role Name Normalization**: role names are now canonicalized (`"Admin"`, `"admin"`, `"Admin User"`, `"admin-user"` all resolve to the same role) to prevent case/formatting duplicates. Does not singularize.
+- **`RoleFu::Authorizable`**: a minimal, framework-agnostic guard concern (`role_fu_authorize!`, `role_fu_can!`, raising `RoleFu::AccessDenied`) for apps that want a guard clause without adding a full authorization gem. Deliberately not an `allow`/`deny` DSL — see README for the Pundit/CanCanCan adapters when you need real rule resolution.
+- **`role_fu:upgrade` generator**: run after bumping the gem to catch up on optional schema/data changes. Inspects your actual schema/data instead of tracking "which version you were on" (nothing persists that reliably), so it's safe to run regardless of how many releases you skipped and safe to re-run. Currently detects the missing `permissions.field` column (generates the migration) and denormalized role names (reports only — never auto-merges, since two differently-cased roles may already coexist with their own assignments).
+
+### BREAKING CHANGES
+
+- **Role name normalization** changes the stored `name` for newly created/looked-up roles (e.g. `"Admin"` -> `"admin"`). Existing rows with mixed-case names are **not** migrated automatically — run `rails generate role_fu:upgrade` after upgrading; it will detect and report them so you can decide how to merge duplicates before backfilling.
+
 ## [0.5.0] - 2026-07-15
 
 ### BREAKING CHANGES
