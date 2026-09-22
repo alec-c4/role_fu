@@ -7,6 +7,7 @@
 - **Role Name Normalization**: role names are now canonicalized (`"Admin"`, `"admin"`, `"Admin User"`, `"admin-user"` all resolve to the same role) to prevent case/formatting duplicates. Does not singularize.
 - **`RoleFu::Authorizable`**: a minimal, framework-agnostic guard concern (`role_fu_authorize!`, `role_fu_can!`, raising `RoleFu::AccessDenied`) for apps that want a guard clause without adding a full authorization gem. Deliberately not an `allow`/`deny` DSL — see README for the Pundit/CanCanCan adapters when you need real rule resolution.
 - **`role_fu:upgrade` generator**: run after bumping the gem to catch up on optional schema/data changes. Inspects your actual schema/data instead of tracking "which version you were on" (nothing persists that reliably), so it's safe to run regardless of how many releases you skipped and safe to re-run. Currently detects the missing `permissions.field` column (generates the migration) and denormalized role names (reports only — never auto-merges, since two differently-cased roles may already coexist with their own assignments).
+- **Post-install banner**: `gem install`/`bundle install` now print a reminder to run `rails generate role_fu:upgrade` after upgrading.
 
 ### BREAKING CHANGES
 

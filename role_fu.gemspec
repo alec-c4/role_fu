@@ -18,6 +18,19 @@ Gem::Specification.new do |spec|
   spec.metadata["source_code_uri"] = "https://github.com/alec-c4/role_fu"
   spec.metadata["changelog_uri"] = "https://github.com/alec-c4/role_fu/blob/main/CHANGELOG.md"
 
+  spec.post_install_message = <<~MSG
+    Thanks for installing role_fu #{RoleFu::VERSION}!
+
+    Upgrading from an older role_fu? Run this to pick up any missing
+    schema/data changes (it inspects your app, so it's a no-op if there's
+    nothing to do):
+
+      rails generate role_fu:upgrade
+      rails db:migrate
+
+    Full changelog: https://github.com/alec-c4/role_fu/blob/main/CHANGELOG.md
+  MSG
+
   # Specify which files should be added to the gem when it is released.
   # The `git ls-files -z` loads the files in the RubyGem that have been added into git.
   gemspec = File.basename(__FILE__)
