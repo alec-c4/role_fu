@@ -24,7 +24,7 @@ module RoleFu
         role_table = RoleFu.role_class.table_name
         assignment_table = RoleFu.role_assignment_class.table_name
 
-        query = joins(:roles).where(role_table => {name: role_name.to_s})
+        query = joins(:roles).where(role_table => {name: RoleFu.normalize_role_name(role_name)})
 
         if RoleFu.role_assignment_class.column_names.include?("expires_at")
           query = query.where("#{assignment_table}.expires_at IS NULL OR #{assignment_table}.expires_at > ?", Time.current)
@@ -136,7 +136,7 @@ module RoleFu
       return false if role_name.nil?
 
       if resource == :any
-        filter_expired(roles.where(name: role_name.to_s)).exists?
+        filter_expired(roles.where(name: RoleFu.normalize_role_name(role_name))).exists?
       else
         return true if filter_expired(find_roles(role_name, resource)).any?
 
@@ -157,7 +157,7 @@ module RoleFu
     end
 
     def has_cached_role?(role_name, resource = nil)
-      role_name = role_name.to_s
+      role_name = RoleFu.normalize_role_name(role_name)
       roles.to_a.any? do |role|
         next false unless role.name == role_name
 
@@ -241,14 +241,14 @@ module RoleFu
 
     def find_or_create_role(role_name, resource)
       RoleFu.role_class.find_or_create_by(
-        name: role_name.to_s,
+        name: RoleFu.normalize_role_name(role_name),
         resource_type: resource_type_for(resource),
         resource_id: resource_id_for(resource)
       )
     end
 
     def find_roles(role_name, resource)
-      query = roles.where(name: role_name.to_s)
+      query = roles.where(name: RoleFu.normalize_role_name(role_name))
 
       if resource.is_a?(Class)
         query.where(resource_type: resource.to_s, resource_id: nil)

@@ -15,7 +15,15 @@ module RoleFu
 
       belongs_to :resource, polymorphic: true, optional: true
 
+      before_validation :normalize_role_fu_name
+
       validates :name, presence: true, uniqueness: {scope: [:resource_type, :resource_id]}
+    end
+
+    private
+
+    def normalize_role_fu_name
+      self.name = RoleFu.normalize_role_name(name) if name.present?
     end
   end
 end

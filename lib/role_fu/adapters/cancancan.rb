@@ -13,11 +13,20 @@ module RoleFu
 
           if parts.size == 2
             subject_name, rule = parts
-            begin
-              subject_class = subject_name.classify.constantize
-              can rule.to_sym, subject_class
+            subject_class = begin
+              subject_name.classify.constantize
             rescue NameError
-              can rule.to_sym, subject_name.to_sym
+              subject_name.to_sym
+            end
+
+            # Field-scoped permissions map onto CanCanCan's own attribute
+            # restriction (`can :update, Post, :title`) instead of role_fu
+            # re-implementing attribute authorization itself.
+            fields = user.role_fu_permitted_fields(action)
+            if fields == :all
+              can rule.to_sym, subject_class
+            else
+              can rule.to_sym, subject_class, *fields.map(&:to_sym)
             end
           else
             can action.to_sym, :all

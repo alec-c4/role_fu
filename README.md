@@ -99,6 +99,16 @@ user.has_role?(:manager, :any) # => true
 user.only_has_role?(:manager, org) # => true if this is their only role
 ```
 
+> **Role names are normalized** (`"Admin"`, `"admin"`, `"Admin User"` and
+> `"admin-user"` all resolve to the same role) so casing/formatting mistakes
+> don't silently create duplicate roles. Normalization does **not**
+> singularize — `"sales"` stays `"sales"` — since blindly singularizing
+> arbitrary business terms tends to mangle them. **Upgrading?** Existing rows
+> with mixed-case names aren't rewritten automatically —
+> `rails generate role_fu:upgrade` will detect and warn about them (it won't
+> backfill on its own: two differently-cased roles may already coexist and
+> need a human to decide how to merge them).
+
 #### Scopes (Finders)
 
 ```ruby
@@ -185,6 +195,36 @@ manager_role.permissions.create(action: "posts.edit")
 user.role_fu_can?("posts.edit") # => true
 ```
 
+**Field-level granularity:**
+
+Permissions can optionally be scoped to a single attribute. A permission granted
+*without* a `field` is a wildcard that satisfies any field-scoped check for that
+same action — so existing `action`-only permissions keep working unchanged.
+
+```ruby
+support_role.permissions.create(action: "reports.update", field: "status")
+
+user.role_fu_can?("reports.update")                # => true  (can do *something* here)
+user.role_fu_can?("reports.update", field: :status) # => true
+user.role_fu_can?("reports.update", field: :amount) # => false
+
+# Build a form / strong params allowlist dynamically:
+user.role_fu_permitted_fields("reports.update")
+# => ["status"]                    if scoped to specific fields
+# => :all                          if granted without a field restriction
+# => []                            if the action isn't granted at all
+```
+
+> **Upgrading an existing `permissions` table?** Run `rails generate role_fu:upgrade`
+> — it inspects your current schema/config and generates only the migrations
+> you're actually missing (here: adding `field` to `permissions`). Safe to
+> re-run any time, regardless of which version you're upgrading from. Without
+> the column, RoleFu transparently falls back to action-only checks.
+
+The **CanCanCan adapter** translates field-scoped permissions into CanCanCan's
+own native attribute restriction (`can :update, Report, :status`) instead of
+role_fu re-implementing attribute-level authorization itself.
+
 ---
 
 ### Adapters (Pundit & CanCanCan)
@@ -211,6 +251,40 @@ end
 ```
 
 _`PostPolicy#update?` will automatically check `user.role_fu_can?('posts.update')`._
+
+#### Lightweight Guard (no authorization gem)
+
+If you don't want to add Pundit or CanCanCan as a dependency just to raise on
+a missing role, `RoleFu::Authorizable` gives you two guard-clause helpers
+built on top of `has_role?` / `role_fu_can?`. **It is intentionally not an
+`allow`/`deny` DSL or a rule-resolution engine** — for anything beyond "raise
+unless this check passes" (policy objects, scopes, composable rules), use the
+Pundit or CanCanCan adapters instead.
+
+```ruby
+class ApplicationController < ActionController::Base
+  include RoleFu::Authorizable
+
+  rescue_from RoleFu::AccessDenied, with: :render_forbidden
+
+  private
+
+  def render_forbidden
+    head :forbidden
+  end
+end
+
+class PostsController < ApplicationController
+  def destroy
+    role_fu_authorize!(:admin)          # raises RoleFu::AccessDenied unless current_user.has_role?(:admin)
+    role_fu_can!("posts.destroy")       # raises RoleFu::AccessDenied unless current_user.role_fu_can?("posts.destroy")
+    # ...
+  end
+end
+```
+
+Resolves the acting user via `current_user` by default; override
+`role_fu_current_user` for jobs/service objects that don't have one.
 
 ---
 
@@ -314,6 +388,24 @@ user.has_group?(:admin)
 User.in_group(:admin)      # Alias for with_group/with_role
 User.not_in_group(:admin)  # Alias for without_group/without_role
 ```
+
+## Upgrading RoleFu
+
+After bumping the gem version, run:
+
+```bash
+rails generate role_fu:upgrade
+rails db:migrate
+```
+
+It inspects your actual schema/config (not "which version you were on" —
+nothing persists that reliably) and generates only what's missing, so it's
+safe to run regardless of how many releases you skipped, and safe to re-run.
+Currently checks for: the `field` column on `permissions` (see
+[Field-level granularity](#4-role-abilities-permissions)), and role names
+that don't match RoleFu's [normalized format](#roleable-user-model) (reported
+only — never auto-merged, since two differently-cased roles may already
+coexist).
 
 ## Migrating from Rolify
 

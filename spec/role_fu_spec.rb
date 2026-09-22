@@ -63,6 +63,52 @@ RSpec.describe RoleFu do
     end
   end
 
+  describe "Role Name Normalization" do
+    it "normalizes on creation" do
+      user.grant("Admin")
+      expect(user.roles.first.name).to eq("admin")
+    end
+
+    it "normalizes camel case, spaces and dashes" do
+      expect(described_class.normalize_role_name("AdminUser")).to eq("admin_user")
+      expect(described_class.normalize_role_name("Admin User")).to eq("admin_user")
+      expect(described_class.normalize_role_name("admin-user")).to eq("admin_user")
+      expect(described_class.normalize_role_name(:admin)).to eq("admin")
+      expect(described_class.normalize_role_name(nil)).to be_nil
+    end
+
+    it "does not singularize (unlike acl9) so plural role names survive" do
+      expect(described_class.normalize_role_name("sales")).to eq("sales")
+    end
+
+    it "treats differently-cased names as the same role" do
+      user.grant("Admin")
+      user.grant("admin")
+
+      expect(user.roles.count).to eq(1)
+      expect(user.has_role?("ADMIN")).to be true
+      expect(user.has_role?(:admin)).to be true
+    end
+
+    it "matches through with_role/has_cached_role? regardless of input casing" do
+      user.grant("Admin")
+
+      expect(User.with_role("admin")).to include(user)
+      expect(User.with_role("Admin")).to include(user)
+
+      preloaded = User.includes(:roles).find(user.id)
+      expect(preloaded.has_cached_role?("Admin")).to be true
+    end
+
+    it "enforces uniqueness after normalization" do
+      role = Role.create(name: "Admin")
+      duplicate = Role.new(name: "admin")
+
+      expect(duplicate).not_to be_valid
+      expect(role.name).to eq("admin")
+    end
+  end
+
   describe "Temporal Roles" do
     it "does not grant role if expired" do
       user.add_role(:temp_admin, expires_at: 1.hour.ago)
@@ -172,6 +218,40 @@ RSpec.describe RoleFu do
       user.instance_variable_set(:@_role_fu_permissions, nil)
 
       expect(user.role_fu_can?("temp.edit")).to be true
+    end
+
+    describe "field-level granularity" do
+      it "grants access to the whole action when no field is set" do
+        role = user.add_role(:editor)
+        role.permissions.create(action: "posts.update")
+
+        expect(user.role_fu_can?("posts.update")).to be true
+        expect(user.role_fu_can?("posts.update", field: :title)).to be true
+        expect(user.role_fu_permitted_fields("posts.update")).to eq(:all)
+      end
+
+      it "restricts the check to explicitly granted fields" do
+        role = user.add_role(:support)
+        role.permissions.create(action: "posts.update", field: "title")
+
+        expect(user.role_fu_can?("posts.update")).to be true # can do *something* on this action
+        expect(user.role_fu_can?("posts.update", field: :title)).to be true
+        expect(user.role_fu_can?("posts.update", field: :body)).to be false
+        expect(user.role_fu_permitted_fields("posts.update")).to contain_exactly("title")
+      end
+
+      it "returns [] for actions that were never granted" do
+        expect(user.role_fu_can?("posts.update", field: :title)).to be false
+        expect(user.role_fu_permitted_fields("posts.update")).to eq([])
+      end
+
+      it "accumulates fields across multiple grants" do
+        role = user.add_role(:support)
+        role.permissions.create(action: "posts.update", field: "title")
+        role.permissions.create(action: "posts.update", field: "body")
+
+        expect(user.role_fu_permitted_fields("posts.update")).to contain_exactly("title", "body")
+      end
     end
   end
 

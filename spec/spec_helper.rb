@@ -59,6 +59,7 @@ RSpec.configure do |config|
       create_table :permissions, force: true do |t|
         t.integer :role_id
         t.string :action
+        t.string :field
         t.string :conditions
         t.timestamps
       end
